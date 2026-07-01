@@ -5,6 +5,7 @@ import json
 import uuid
 from datetime import datetime
 import pypdf
+import re
 
 CATEGORIES = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
@@ -32,9 +33,9 @@ def extract_pdf_text(filepath, max_pages=1):
         return ""
 
 PDF_KEYWORDS = {
-    "Resumes": ["professional summary", "work experience", "education", "skills", "curriculum vitae", "objective"],
+    "Resumes": ["professional summary", "work experience", "curriculum vitae", "years of experience", "career objective"],
     "Invoices": ["invoice", "total due", "amount due", "bill to", "payment receipt", "subtotal", "receipt"],
-    "Academic": ["assignment", "syllabus", "homework", "quiz", "unit", "lecture", "professor", "semester"],
+    "Academic": ["assignment", "syllabus", "homework", "quiz", "lecture notes", "semester", "professor"],
 }
 
 def classify_pdf_content(filepath):
@@ -45,7 +46,8 @@ def classify_pdf_content(filepath):
     scores = {category: 0 for category in PDF_KEYWORDS}
     for category, keywords in PDF_KEYWORDS.items():
         for keyword in keywords:
-            if keyword in text:
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+            if re.search(pattern, text):
                 scores[category] += 1
 
     best_category = max(scores, key=scores.get)
