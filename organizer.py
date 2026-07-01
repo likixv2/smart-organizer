@@ -75,6 +75,7 @@ def classify(filepath):
 class DownloadHandler(FileSystemEventHandler):
     def __init__(self, target_folder):
         self.target_folder = target_folder
+        self.moves_log = []
 
     def on_created(self, event):
         if event.is_directory:
@@ -110,6 +111,7 @@ class DownloadHandler(FileSystemEventHandler):
             time.sleep(interval)
 
     def organize_single_file(self, filepath):
+        original_path = str(filepath)
         category = classify(filepath)
         dest_folder = self.target_folder / category
         dest_path = dest_folder / filepath.name
@@ -124,6 +126,10 @@ class DownloadHandler(FileSystemEventHandler):
         dest_folder.mkdir(exist_ok=True)
         shutil.move(str(filepath), str(dest_path))
         print(f"Auto-organized: {filepath.name} -> {dest_path}")
+        self.moves_log.append({
+            "original_path": original_path,
+            "new_path": str(dest_path)
+        })
 
 
 def main():
@@ -229,6 +235,21 @@ def main():
         except KeyboardInterrupt:
             observer.stop()
             print("\nStopped watching.")
+
+            if event_handler.moves_log:
+                session_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
+                session_file = get_log_dir() / f"{session_id}.json"
+                with open(session_file, "w") as f:
+                    json.dump({
+                        "session_id": session_id,
+                        "folder": str(target),
+                        "timestamp": datetime.now().isoformat(),
+                        "moves": event_handler.moves_log
+                    }, f, indent=2)
+                print(f"Session logged: {session_id}")
+                print(f"Run 'python3 organizer.py undo' to reverse this.")
+            else:
+                print("No files were moved during this session.")
         observer.join()
 if __name__ == "__main__":
     main()
