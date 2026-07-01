@@ -23,6 +23,7 @@ def main():
 
     organize_parser = subparsers.add_parser("organize", help="Organize a folder")
     organize_parser.add_argument("folder", help="Path to folder to organize")
+    organize_parser.add_argument("--dry-run", action="store_true", help="Show what would happen without moving files")
 
     undo_parser = subparsers.add_parser("undo", help="Undo the last organize run")
 
@@ -31,7 +32,11 @@ def main():
     args = parser.parse_args()
 
     if args.command == "organize":
-        print(f"Would organize folder: {args.folder}")
+        target = Path(args.folder).expanduser()
+        for item in target.iterdir():
+            if item.is_file() and item.name != ".DS_Store":
+                category = classify(item)
+                print(f"{item.name} -> {category}/")
     elif args.command == "undo":
         print("Would undo last session")
     elif args.command == "list-sessions":
