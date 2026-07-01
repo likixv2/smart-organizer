@@ -1,6 +1,9 @@
 import argparse
 from pathlib import Path
 import shutil
+import json
+import uuid
+from datetime import datetime
 
 CATEGORIES = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
@@ -11,6 +14,12 @@ CATEGORIES = {
     "Archives": [".zip", ".rar", ".tar", ".gz", ".dmg"],
     "Code": [".py", ".js", ".html", ".css", ".json", ".ipynb"],
 }
+
+LOG_DIR = Path.home() / ".file_organizer" / "sessions"
+
+def get_log_dir():
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    return LOG_DIR
 
 def classify(filepath):
     ext = Path(filepath).suffix.lower()
