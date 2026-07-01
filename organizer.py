@@ -43,13 +43,14 @@ def main():
 
     if args.command == "organize":
         target = Path(args.folder).expanduser()
+        moves_log = []
+
         for item in target.iterdir():
             if item.is_file() and item.name != ".DS_Store":
                 category = classify(item)
                 dest_folder = target / category
                 dest_path = dest_folder / item.name
 
-                # Handle name collisions
                 counter = 1
                 stem = item.stem
                 suffix = item.suffix
@@ -63,6 +64,23 @@ def main():
                     dest_folder.mkdir(exist_ok=True)
                     shutil.move(str(item), str(dest_path))
                     print(f"Moved: {item.name} -> {dest_path}")
+                    moves_log.append({
+                        "original_path": str(item),
+                        "new_path": str(dest_path)
+                    })
+
+        if not args.dry_run and moves_log:
+            session_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
+            session_file = get_log_dir() / f"{session_id}.json"
+            with open(session_file, "w") as f:
+                json.dump({
+                    "session_id": session_id,
+                    "folder": str(target),
+                    "timestamp": datetime.now().isoformat(),
+                    "moves": moves_log
+                }, f, indent=2)
+            print(f"\nSession logged: {session_id}")
+            print(f"Run 'python3 organizer.py undo' to reverse this.")
     elif args.command == "undo":
         print("Would undo last session")
     elif args.command == "list-sessions":
