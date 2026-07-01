@@ -6,6 +6,9 @@ import uuid
 from datetime import datetime
 import pypdf
 import re
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 CATEGORIES = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
@@ -68,6 +71,59 @@ def classify(filepath):
         if ext in extensions:
             return category
     return "Others"
+
+class DownloadHandler(FileSystemEventHandler):
+    def __init__(self, target_folder):
+        self.target_folder = target_folder
+
+    def on_created(self, event):
+        if event.is_directory:
+            return
+
+        filepath = Path(event.src_path)
+
+        if filepath.name == ".DS_Store":
+            return
+        if filepath.suffix in (".crdownload", ".part", ".download"):
+            return
+
+        # Wait for the file to finish being written
+        self.wait_until_stable(filepath)
+
+        if not filepath.exists():
+            return  # file disappeared (e.g. was a temp file that got renamed)
+
+        self.organize_single_file(filepath)
+
+    def wait_until_stable(self, filepath, checks=3, interval=1):
+        last_size = -1
+        stable_count = 0
+        while stable_count < checks:
+            if not filepath.exists():
+                return
+            current_size = filepath.stat().st_size
+            if current_size == last_size:
+                stable_count += 1
+            else:
+                stable_count = 0
+            last_size = current_size
+            time.sleep(interval)
+
+    def organize_single_file(self, filepath):
+        category = classify(filepath)
+        dest_folder = self.target_folder / category
+        dest_path = dest_folder / filepath.name
+
+        counter = 1
+        stem = filepath.stem
+        suffix = filepath.suffix
+        while dest_path.exists():
+            dest_path = dest_folder / f"{stem}_{counter}{suffix}"
+            counter += 1
+
+        dest_folder.mkdir(exist_ok=True)
+        shutil.move(str(filepath), str(dest_path))
+        print(f"Auto-organized: {filepath.name} -> {dest_path}")
 
 
 def main():
@@ -160,7 +216,19 @@ def main():
                 data = json.load(f)
             print(f"{data['session_id']}  |  {data['folder']}  |  {len(data['moves'])} files moved")
     elif args.command == "watch":
-        print(f"Would watch folder: {args.folder}")
+        target = Path(args.folder).expanduser()
+        event_handler = DownloadHandler(target)
+        observer = Observer()
+        observer.schedule(event_handler, str(target), recursive=False)
+        observer.start()
+        print(f"Watching {target} for new files... (Ctrl+C to stop)")
 
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+            print("\nStopped watching.")
+        observer.join()
 if __name__ == "__main__":
     main()
