@@ -21,14 +21,6 @@ LOG_DIR = Path.home() / ".file_organizer" / "sessions"
 def get_log_dir():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     return LOG_DIR
-
-def classify(filepath):
-    ext = Path(filepath).suffix.lower()
-    for category, extensions in CATEGORIES.items():
-        if ext in extensions:
-            return category
-    return "Others"
-
 def extract_pdf_text(filepath, max_pages=1):
     try:
         reader = pypdf.PdfReader(filepath)
@@ -61,6 +53,20 @@ def classify_pdf_content(filepath):
         return None
 
     return best_category
+
+def classify(filepath):
+    ext = Path(filepath).suffix.lower()
+
+    if ext == ".pdf":
+        content_category = classify_pdf_content(filepath)
+        if content_category:
+            return content_category
+
+    for category, extensions in CATEGORIES.items():
+        if ext in extensions:
+            return category
+    return "Others"
+
 
 def main():
     parser = argparse.ArgumentParser(description="Smart file organizer")
