@@ -82,7 +82,28 @@ def main():
             print(f"\nSession logged: {session_id}")
             print(f"Run 'python3 organizer.py undo' to reverse this.")
     elif args.command == "undo":
-        print("Would undo last session")
+        session_files = sorted(get_log_dir().glob("*.json"))
+        if not session_files:
+            print("No sessions found to undo.")
+            return
+
+        latest_session = session_files[-1]
+        with open(latest_session) as f:
+            session_data = json.load(f)
+
+        print(f"Undoing session: {session_data['session_id']}")
+        for move in session_data["moves"]:
+            original = Path(move["original_path"])
+            new = Path(move["new_path"])
+            if new.exists():
+                original.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(new), str(original))
+                print(f"Restored: {new.name} -> {original}")
+            else:
+                print(f"Skipped (not found): {new}")
+
+        latest_session.unlink()
+        print(f"\nSession {session_data['session_id']} undone and removed.")
     elif args.command == "list-sessions":
         print("Would list past sessions")
 
