@@ -1,5 +1,22 @@
 import argparse
+from pathlib import Path
 
+CATEGORIES = {
+    "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
+    "Documents": [".pdf", ".doc", ".docx", ".txt", ".pages", ".rtf"],
+    "Spreadsheets": [".xls", ".xlsx", ".csv", ".numbers"],
+    "Videos": [".mp4", ".mov", ".avi", ".mkv"],
+    "Audio": [".mp3", ".wav", ".m4a", ".aac"],
+    "Archives": [".zip", ".rar", ".tar", ".gz", ".dmg"],
+    "Code": [".py", ".js", ".html", ".css", ".json", ".ipynb"],
+}
+
+def classify(filepath):
+    ext = Path(filepath).suffix.lower()
+    for category, extensions in CATEGORIES.items():
+        if ext in extensions:
+            return category
+    return "Others"
 def main():
     parser = argparse.ArgumentParser(description="Smart file organizer")
     subparsers = parser.add_subparsers(dest="command", required=True)
