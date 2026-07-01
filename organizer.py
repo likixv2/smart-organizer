@@ -4,6 +4,7 @@ import shutil
 import json
 import uuid
 from datetime import datetime
+import pypdf
 
 CATEGORIES = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
@@ -27,6 +28,40 @@ def classify(filepath):
         if ext in extensions:
             return category
     return "Others"
+
+def extract_pdf_text(filepath, max_pages=1):
+    try:
+        reader = pypdf.PdfReader(filepath)
+        text = ""
+        for page in reader.pages[:max_pages]:
+            text += page.extract_text() or ""
+        return text.lower()
+    except Exception:
+        return ""
+
+PDF_KEYWORDS = {
+    "Resumes": ["professional summary", "work experience", "education", "skills", "curriculum vitae", "objective"],
+    "Invoices": ["invoice", "total due", "amount due", "bill to", "payment receipt", "subtotal", "receipt"],
+    "Academic": ["assignment", "syllabus", "homework", "quiz", "unit", "lecture", "professor", "semester"],
+}
+
+def classify_pdf_content(filepath):
+    text = extract_pdf_text(filepath)
+    if not text:
+        return None
+
+    scores = {category: 0 for category in PDF_KEYWORDS}
+    for category, keywords in PDF_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in text:
+                scores[category] += 1
+
+    best_category = max(scores, key=scores.get)
+    if scores[best_category] == 0:
+        return None
+
+    return best_category
+
 def main():
     parser = argparse.ArgumentParser(description="Smart file organizer")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -105,7 +140,15 @@ def main():
         latest_session.unlink()
         print(f"\nSession {session_data['session_id']} undone and removed.")
     elif args.command == "list-sessions":
-        print("Would list past sessions")
+        session_files = sorted(get_log_dir().glob("*.json"))
+        if not session_files:
+            print("No sessions found.")
+            return
+
+        for sf in session_files:
+            with open(sf) as f:
+                data = json.load(f)
+            print(f"{data['session_id']}  |  {data['folder']}  |  {len(data['moves'])} files moved")
 
 if __name__ == "__main__":
     main()
