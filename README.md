@@ -22,7 +22,7 @@ Every real run is logged, so any organize session can be fully undone.
 - Full undo support via session logs
 - Handles filename collisions automatically
 - Session history with `list-sessions`
-
+- Real-time folder watching: automatically organizes new files as they arrive
 ## Installation
 
 \`\`\`bash
@@ -54,6 +54,12 @@ List past organize sessions:
 \`\`\`bash
 python3 organizer.py list-sessions
 \`\`\`
+Watch a folder and auto-organize new files as they appear:
+\`\`\`bash
+python3 organizer.py watch ~/Downloads
+\`\`\`
+Press Ctrl+C to stop watching. Like `organize`, watch sessions are logged
+and can be undone with `python3 organizer.py undo`.
 
 ## How PDF classification works
 
