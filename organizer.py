@@ -72,6 +72,16 @@ def classify(filepath):
             return category
     return "Others"
 
+def get_unique_dest_path(dest_folder, filename):
+    dest_path = dest_folder / filename
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix
+    counter = 1
+    while dest_path.exists():
+        dest_path = dest_folder / f"{stem}_{counter}{suffix}"
+        counter += 1
+    return dest_path
+
 class DownloadHandler(FileSystemEventHandler):
     def __init__(self, target_folder):
         self.target_folder = target_folder
@@ -114,14 +124,7 @@ class DownloadHandler(FileSystemEventHandler):
         original_path = str(filepath)
         category = classify(filepath)
         dest_folder = self.target_folder / category
-        dest_path = dest_folder / filepath.name
-
-        counter = 1
-        stem = filepath.stem
-        suffix = filepath.suffix
-        while dest_path.exists():
-            dest_path = dest_folder / f"{stem}_{counter}{suffix}"
-            counter += 1
+        dest_path = get_unique_dest_path(dest_folder, filepath.name)
 
         dest_folder.mkdir(exist_ok=True)
         shutil.move(str(filepath), str(dest_path))
@@ -156,14 +159,7 @@ def main():
             if item.is_file() and item.name != ".DS_Store":
                 category = classify(item)
                 dest_folder = target / category
-                dest_path = dest_folder / item.name
-
-                counter = 1
-                stem = item.stem
-                suffix = item.suffix
-                while dest_path.exists():
-                    dest_path = dest_folder / f"{stem}_{counter}{suffix}"
-                    counter += 1
+                dest_path = get_unique_dest_path(dest_folder, item.name)
 
                 if args.dry_run:
                     print(f"[DRY RUN] {item.name} -> {dest_path}")
