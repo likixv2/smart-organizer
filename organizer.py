@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import shutil
 
 CATEGORIES = {
     "Images": [".jpg", ".jpeg", ".png", ".gif", ".heic", ".webp", ".svg"],
@@ -36,7 +37,23 @@ def main():
         for item in target.iterdir():
             if item.is_file() and item.name != ".DS_Store":
                 category = classify(item)
-                print(f"{item.name} -> {category}/")
+                dest_folder = target / category
+                dest_path = dest_folder / item.name
+
+                # Handle name collisions
+                counter = 1
+                stem = item.stem
+                suffix = item.suffix
+                while dest_path.exists():
+                    dest_path = dest_folder / f"{stem}_{counter}{suffix}"
+                    counter += 1
+
+                if args.dry_run:
+                    print(f"[DRY RUN] {item.name} -> {dest_path}")
+                else:
+                    dest_folder.mkdir(exist_ok=True)
+                    shutil.move(str(item), str(dest_path))
+                    print(f"Moved: {item.name} -> {dest_path}")
     elif args.command == "undo":
         print("Would undo last session")
     elif args.command == "list-sessions":
