@@ -60,6 +60,16 @@ python3 organizer.py watch ~/Downloads
 \`\`\`
 Press Ctrl+C to stop watching. Like `organize`, watch sessions are logged
 and can be undone with `python3 organizer.py undo`.
+## Running Tests
+
+This project has a test suite covering file classification, collision
+handling, and regression tests for a keyword-matching bug found during
+development.
+
+\`\`\`bash
+pip install pytest
+pytest -v
+\`\`\`
 
 ## How PDF classification works
 
