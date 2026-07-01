@@ -81,6 +81,8 @@ def main():
     undo_parser = subparsers.add_parser("undo", help="Undo the last organize run")
 
     list_parser = subparsers.add_parser("list-sessions", help="List past organize sessions")
+    watch_parser = subparsers.add_parser("watch", help="Watch a folder and auto-organize new files")
+    watch_parser.add_argument("folder", help="Path to folder to watch")
 
     args = parser.parse_args()
 
@@ -157,6 +159,8 @@ def main():
             with open(sf) as f:
                 data = json.load(f)
             print(f"{data['session_id']}  |  {data['folder']}  |  {len(data['moves'])} files moved")
+    elif args.command == "watch":
+        print(f"Would watch folder: {args.folder}")
 
 if __name__ == "__main__":
     main()
